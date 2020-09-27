@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "msemu.h"
+
 // RGBA8888 colors
 #define UI_COLOR_DIM_GREEN (0x9de08c00)
 #define UI_COLOR_DARK_GREY (0x26211400)
@@ -42,5 +44,7 @@ void ui_update_lcd();
  * Renders the UI
  */
 void ui_render();
+
+void ui_process_events(ms_ctx *ms);
 
 #endif // _UI_H_
