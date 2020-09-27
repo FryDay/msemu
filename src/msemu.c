@@ -231,10 +231,10 @@ Z80EX_BYTE z80ex_mread(
 		break;
 
 	  case CF:
-		ret = cf_read(((addr & ~0xC000) + (0x4000 * page)));
+		ret = cf_read(ms->cf, ((addr & ~0xC000) + (0x4000 * page)));
 		break;
 	  case DF:
-		ret = df_read(((addr & ~0xC000) + (0x4000 * page)));
+		ret = df_read(ms->df, ((addr & ~0xC000) + (0x4000 * page)));
 		break;
 	  case RAM:
 		ret = *(uint8_t *)(ms->slot_map[slot] + (addr & 0x3FFF));
@@ -314,7 +314,7 @@ void z80ex_mwrite(
 		break;
 
 	  case DF:
-		df_write(((addr & ~0xC000) + (0x4000 * page)), val);
+		df_write(ms->df, ((addr & ~0xC000) + (0x4000 * page)), val);
 		break;
 
 	  case MODEM:
@@ -327,7 +327,7 @@ void z80ex_mwrite(
 		break;
 
 	  case CF:
-		//cf_write(((addr & ~0xC000) + (0x4000 * page)), val);
+		//cf_write(ms->cf, ((addr & ~0xC000) + (0x4000 * page)), val);
 		log_error(" * CF    W [%04X] INVALID, CANNOT W TO CF @ %04X\n",
 		  addr, z80ex_get_reg(ms->z80, regPC));
 		break;
@@ -662,8 +662,6 @@ int ms_init(ms_ctx* ms, ms_opts* options)
 	 *
 	 * TODO: Add error checking on the buffer allocation
 	 */
-	//ms->dev_map[CF] = (uintptr_t)calloc(SZ_1M, sizeof(uint8_t));
-	//ms->dev_map[DF] = (uintptr_t)calloc(SZ_512K, sizeof(uint8_t));
 	ms->dev_map[RAM] = (uintptr_t)calloc(SZ_128K, sizeof(uint8_t));
 	ms->io = (uint8_t *)calloc(SZ_64K, sizeof(uint8_t));
 	ms->lcd_dat1bit = (uint8_t *)calloc(((MS_LCD_WIDTH * MS_LCD_HEIGHT) / 8),
@@ -682,7 +680,6 @@ int ms_init(ms_ctx* ms, ms_opts* options)
 	ms->power_state = MS_POWERSTATE_OFF;
 
 	/* Initialize the slot_map */
-	//ms->slot_map[0] = ms->dev_map[CF]; /* slot0000 is always CF_0 */
 	ms->slot_map[1] = ms->dev_map[((ms->io[SLOT4_DEV]) & 0x0F)] +
 	  (ms->io[SLOT4_PAGE] * 0x4000);
 	ms->slot_map[2] = ms->dev_map[((ms->io[SLOT8_DEV]) & 0x0F)] +
@@ -700,9 +697,10 @@ int ms_init(ms_ctx* ms, ms_opts* options)
 		z80ex_intread, (void*)ms
 	);
 
-	if (cf_init(options) == ENOENT) return MS_ERR;
+	if (cf_init(&ms->cf, options) == ENOENT) return MS_ERR;
 	/* XXX: Handle return value here. e.g. new disk, invalid disk, etc. */
-	if (df_init(options) == ENOENT) {
+
+	if (df_init(&ms->df, options) == ENOENT) {
 		//Set up serial number here
 	}
 	/* XXX: Check serial number here */
@@ -719,8 +717,8 @@ int ms_init(ms_ctx* ms, ms_opts* options)
 
 int ms_deinit(ms_ctx *ms, ms_opts *options)
 {
-	cf_deinit(options);
-	df_deinit(options);
+	cf_deinit(&ms->cf, options);
+	df_deinit(&ms->df, options);
 
 	return 0;
 }

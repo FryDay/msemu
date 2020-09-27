@@ -8,6 +8,7 @@
 #include "ui.h"
 
 #include <SDL2/SDL.h>
+#include <string.h>
 
 void usage(const char *path_arg, const char *cf_path, const char *df_path)
 {
@@ -79,6 +80,7 @@ int main(int argc, char** argv)
 	}
 
 	// Init mailstation w/ options
+	bzero(&ms, sizeof(ms));
 	if (ms_init(&ms, &options) == MS_ERR) return 1;
 	ui_init(ms.lcd_datRGBA8888);
 

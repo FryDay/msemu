@@ -10,9 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static uint8_t *df_buf = NULL;
-static uint8_t *cf_buf = NULL;
-
 #define DF_SN_OFFS     0x7FFC8
 
 /*
@@ -47,12 +44,12 @@ static int buftofile(uint8_t *buf, const char *file_path, ssize_t sz)
 	return ret;
 }
 
-int df_init(ms_opts *options)
+int df_init(uint8_t **df_buf, ms_opts *options)
 {
-	assert(df_buf == NULL);
+	assert(*df_buf == NULL);
 
-	df_buf = (uint8_t *)calloc(SZ_512K, sizeof(uint8_t));
-	if (df_buf == NULL) {
+	*df_buf = (uint8_t *)calloc(SZ_512K, sizeof(uint8_t));
+	if (*df_buf == NULL) {
 		printf("Unable to allocate dataflash buffer\n");
 		exit(EXIT_FAILURE);
 	}
@@ -64,7 +61,7 @@ int df_init(ms_opts *options)
          * It should never be longer either. If it is, we just pretend like
          * we didn't notice. This might be unwise behavior.
          */
-	if (!filetobuf(df_buf, options->df_path, SZ_512K)) {
+	if (!filetobuf(*df_buf, options->df_path, SZ_512K)) {
                 printf("Existing dataflash image not found at '%s', creating "
                   "a new dataflah image.\n", options->df_path);
 		return ENOENT;
@@ -73,26 +70,26 @@ int df_init(ms_opts *options)
 	return 0;
 }
 
-int df_deinit(ms_opts *options)
+int df_deinit(uint8_t **df_buf, ms_opts *options)
 {
-	int ret;
+	int ret = 0;
 
-	assert(df_buf != NULL);
+	assert(*df_buf != NULL);
 	if (options->df_save_to_disk) {
-		ret = buftofile(df_buf, options->df_path, SZ_512K);
-		free(df_buf);
-		df_buf = NULL;
+		ret = buftofile(*df_buf, options->df_path, SZ_512K);
 		if (ret < SZ_512K) {
 			printf("Failed writing dataflash, only wrote %d\n",
 			  ret);
-			return EIO;
+			ret = EIO;
 		}
 	}
+	free(*df_buf);
+	*df_buf = NULL;
 
-	return 0;
+	return ret;
 };
 
-uint8_t df_read(unsigned int absolute_addr)
+uint8_t df_read(uint8_t *df_buf, unsigned int absolute_addr)
 {
 	/* Add hook here for lock/unlock */
 	return *(df_buf + absolute_addr);
@@ -118,7 +115,7 @@ uint8_t df_read(unsigned int absolute_addr)
  *
  * TODO: Add debugging hook here.
  */
-int df_write(unsigned int absolute_addr, uint8_t val)
+int df_write(uint8_t *df_buf, unsigned int absolute_addr, uint8_t val)
 {
 	static uint8_t cycle;
 	static uint8_t cmd;
@@ -170,12 +167,12 @@ int df_write(unsigned int absolute_addr, uint8_t val)
 	return 0;
 }
 
-int cf_init(ms_opts *options)
+int cf_init(uint8_t **cf_buf, ms_opts *options)
 {
-	assert(cf_buf == NULL);
+	assert(*cf_buf == NULL);
 
-	cf_buf = (uint8_t *)calloc(SZ_1M, sizeof(uint8_t));
-	if (cf_buf == NULL) {
+	*cf_buf = (uint8_t *)calloc(SZ_1M, sizeof(uint8_t));
+	if (*cf_buf == NULL) {
 		printf("Unable to allocate codeflash buffer\n");
 		exit(EXIT_FAILURE);
 	}
@@ -187,32 +184,32 @@ int cf_init(ms_opts *options)
          * It should never be longer either. If it is, we just pretend like
          * we didn't notice. This might be unwise behavior.
          */
-	if (!filetobuf(cf_buf, options->cf_path, SZ_1M)) {
+	if (!filetobuf(*cf_buf, options->cf_path, SZ_1M)) {
                 log_error("Failed to load codeflash from '%s'.\n", options->cf_path);
-		free(cf_buf);
-		cf_buf = NULL;
+		free(*cf_buf);
+		*cf_buf = NULL;
                 return ENOENT;
         }
 
 	return 0;
 }
 
-int cf_deinit(ms_opts *options)
+int cf_deinit(uint8_t **cf_buf, ms_opts *options)
 {
-	assert(cf_buf != NULL);
+	assert(*cf_buf != NULL);
 
-	free(cf_buf);
-	cf_buf = NULL;
+	free(*cf_buf);
+	*cf_buf = NULL;
 
 	return 0;
 }
 
-uint8_t cf_read(unsigned int absolute_addr)
+uint8_t cf_read(uint8_t *cf_buf, unsigned int absolute_addr)
 {
 	return *(cf_buf + absolute_addr);
 }
 
-int cf_write(unsigned int absolute_addr, uint8_t val)
+int cf_write(uint8_t *cf_buf, unsigned int absolute_addr, uint8_t val)
 {
 	printf("CF write not implemented!\n");
 
