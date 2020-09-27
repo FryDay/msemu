@@ -5,7 +5,10 @@
 #include <stdio.h>
 #include "msemu.h"
 
-#define DF_SN_OFFS	0x7FFC8
+int df_init(ms_opts *options);
+int df_deinit(ms_opts *options);
+int cf_init(ms_opts *options);
+int cf_deinit(ms_opts *options);
 
 /**
  * Interpret commands intended for 28SF040 flash, aka Mailstation dataflash
@@ -14,45 +17,12 @@
  * translated_addr - Address in range of dataflash, 0x00000:0x7FFFF
  * val             - Command or value to send to dataflash
  */
-int df_parse_cmd(ms_ctx* ms, unsigned int translated_addr, uint8_t val);
+int df_write(unsigned int absolute_addr, uint8_t val);
 
-/**
- * Generate and set a random serial number in dataflash
- *
- * See flashops.c for more detail about the serial number
- *
- * ms - Pointer to ms_ctx which already has dev_map set up and allocated
- */
-void df_set_rnd_serial(ms_ctx *ms);
+uint8_t df_read(unsigned int absolute_addr);
 
-/**
- * Check if serial number in dataflash is valid
- *
- * See flashops.c for more detail about the serial number
- *
- * ms - Pointer to ms_ctx which already has dev_map set up and allocated
- */
-int df_serial_valid(ms_ctx *ms);
+int cf_write(unsigned int absolute_addr, uint8_t val);
 
-/**
- * Reads a file into memory.
- *
- * buf       - buffer to load file contents into
- * file_path - path to file on disk
- * sz        - number of bytes to read
- *
- * Returns number of bytes read.
- */
-int filetobuf(uint8_t *buf, const char *file_path, ssize_t sz);
+uint8_t cf_read(unsigned int absolute_addr);
 
-/**
- * Writes a buffer to file.
- *
- * buf       - contents to be written
- * file_path - path to file on disk
- * sz        - number of bytes to write
- *
- * Returns number of bytes written.
- */
-int buftofile(uint8_t *buf, const char *file_path, ssize_t sz);
 #endif

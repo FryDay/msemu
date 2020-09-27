@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 			strncpy(options.df_path, optarg, strlen(optarg)+1);
 			break;
 		  case 'n':
-			df_save_to_disk = 0;
+			options.df_save_to_disk = 0;
 			break;
 		  case 'h':
 		  default:
@@ -88,21 +88,7 @@ int main(int argc, char** argv)
 		log_error("mailstation existed with code %d.\n", ret);
 	}
 
-	/* Write dataflash buffer to disk if it was modified */
-	if (ms.dataflash_updated) {
-		if (!df_save_to_disk) {
-			log_error("Not writing modified dataflash to disk!\n");
-		} else {
-			log_error("Writing dataflash buffer to disk\n");
-			ret = buftofile((uint8_t *)ms.dev_map[DF],
-			  options.df_path, SZ_512K);
-			if (ret < SZ_512K) {
-				log_error(
-				  "Failed writing dataflash, only wrote %d\n",
-				  ret);
-			}
-		}
-	}
+	ms_deinit(&ms, &options);
 
 	return ret;
 }

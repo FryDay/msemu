@@ -114,6 +114,9 @@ typedef struct ms_opts {
 
 	// Dataflash path
 	char* df_path;
+
+	// Save dataflash back to disk
+	int df_save_to_disk;
 } ms_opts;
 
 /**
@@ -125,6 +128,7 @@ typedef struct ms_opts {
  * Returns `MS_OK` on success, error code on failure
  */
 int ms_init(ms_ctx* ms, ms_opts* options);
+int ms_deinit(ms_ctx* ms, ms_opts* options);
 
 /**
  * Runs the mailstation emulation
